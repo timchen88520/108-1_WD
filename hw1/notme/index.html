@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>DEMO</title>
+
+	<style>
+		td {
+			text-align: center;
+		}
+
+		tr:hover td {
+			background-color: orange;
+		}
+	</style>
+
+</head>
+
+<body>
+	<p> 選擇要上傳的圖片</p>
+
+	<form action="/upload" enctype="multipart/form-data">
+
+		<input type="file" onchange="readURL(this)" targetID="preview_progressbarTW_img"
+			accept="image/gif, image/jpeg, image/png" />
+
+		<img id="preview_progressbarTW_img" src="#" />
+
+	</form>
+
+	<!--<p> 檔案：<input type="text" id="File" value=""><br> </p>-->
+
+	<!--<p> <input type="button" value="上傳" onclick="readURL(this)""><br> </p>-->
+
+
+
+
+	<!--<table id=" Table" style="border: 1px solid" rules="all" width="600">-->
+
+	<tr>
+		<th colspan="3" align="center">
+			給你看看習大大
+		</th>
+	</tr>
+
+
+
+	<div id=div1 style="display:none">
+
+		<Img id="Img1" name="Img1" Src="/O0wYMUM.jpg">
+		<P>
+
+	</div>
+
+
+	<!--  ImgFn('Img1','Hide');  -->
+	<Img id="Img2" name="Img2" Src="/shi.jpg">
+	<P>
+
+
+
+
+</body>
+<script>
+
+	function readURL(input) {
+
+		if (input.files && input.files[0]) {
+
+			var imageTagID = input.getAttribute("targetID");
+
+			var reader = new FileReader();
+
+			reader.onload = function (e) {
+
+				var img = document.getElementById(imageTagID);
+
+				img.setAttribute("src", e.target.result)
+
+			}
+
+			reader.readAsDataURL(input.files[0]);
+
+		}
+
+	}
+
+</script>
+
+</html>

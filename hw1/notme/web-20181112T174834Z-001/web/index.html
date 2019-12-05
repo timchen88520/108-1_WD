@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>DEMO</title>
+
+	<style>
+
+		td
+		{
+			text-align: center ;
+		}
+
+		tr:hover td
+		{
+			background-color:orange;	
+		}
+
+	</style>
+
+	<script>
+		
+		function run()
+		{
+			var name = document.getElementById("Name").value;
+			var stunum = document.getElementById("StuNum").value;
+			var phone = document.getElementById("Phone").value;
+		
+			if(!name || !stunum || !phone )
+			{
+				<!-- alert("您有欄位沒有輸入內容!"); -->
+				if ( confirm ("我不知道你輸入了什麼 ??? ??? ") )
+　　　 				{　	
+					div1.style.display='';　 
+				}
+			}
+			else
+			{
+				var num = document.getElementById("Table").rows.length; 
+				var tr = document.getElementById("Table").insertRow(num);
+
+				var td = tr.insertCell(tr.cells.length);
+					td.innerHTML=name;
+			
+				td = tr.insertCell(tr.cells.length);
+					td.innerHTML=stunum;
+			
+				td = tr.insertCell(tr.cells.length);
+					td.innerHTML=phone;
+
+				div1.style.display='none';				
+
+			}
+			
+		}
+
+	</script>
+	
+</head>
+
+<body>
+	<p> 請輸入以下資訊 </p>
+
+	<p> 姓名:<input type="text" id="Name" value=""><br> </p>
+
+	<p> 學號:<input type="text" id="StuNum" value=""><br> </p>
+
+	<p> 電話:<input type="text" id="Phone" value=""><br> </p>
+
+	<p> <input type="button" value="新增至表格" onclick="run()"><br> </p>
+
+
+	
+	
+	<table id="Table" style="border: 1px solid" rules="all" width="600" >
+		
+		<tr>
+			<th colspan="3" align="center">
+				通訊錄
+			</th>
+		</tr>
+
+
+		<tr>	
+			<th>姓名</th>
+			<th>學號</th>
+			<th>電話</th>
+		</tr>
+			
+	</table>
+	
+	
+	<div id=div1 style="display:none">
+	
+		<Img id="Img1" name="Img1" Src="/O0wYMUM.jpg"><P>
+	
+	</div>		
+
+	
+	<!--  ImgFn('Img1','Hide');  -->
+	<Img id="Img2" name="Img2" Src="/closers-online-tina.jpg"><P> 	
+	
+
+
+		
+</body>
+
+</html>
