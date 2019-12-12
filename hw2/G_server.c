@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include <unistd.h>
+#include<string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -15,6 +16,7 @@
 /*定义全局变量*/
 int fdt[Max]={0};
 char mes[1024];
+char name_all[100][100]={0};
 
 /**/
 
@@ -51,11 +53,36 @@ void *pthread_service(void* sfd)
 int SendToClient(int fd,char* buf,int Size)
 {
 	int i;
+	int flag=0;		
+	printf("buff: %s\n",buf);
+
+	if(strstr(buf,"name:")!=NULL){
+		strcpy(buf,buf+5);
+		strcpy(name_all[fd],buf);
+		printf("name: %s\n",name_all[fd]);
+	}	
+	if(strstr(buf,"list_all")!=NULL){
+		memset(buf,0,sizeof(buf));
+		for(int j=0;j<Max;j++){
+			if(fdt[j]!=0){
+				strcat(buf,name_all[fdt[j]]);
+				strcat(buf," ");
+			}
+		}
+		strcat(buf,"\n");
+		send(fd,buf,Size,0);
+		printf("send message to %d\n",fdt[i]);
+		return 0;
+
+	}
 	for(i=0;i<Max;i++){
 		printf("fdt[%d]=%d\n",i,fdt[i]);
+
+
 		if((fdt[i]!=0)&&(fdt[i]!=fd)){
 			send(fdt[i],buf,Size,0);
 			printf("send message to %d\n",fdt[i]);
+			memset(buf,0,sizeof(buf));
 		}
 	}
 	return 0;

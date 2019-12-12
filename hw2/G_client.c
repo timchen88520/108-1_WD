@@ -16,7 +16,7 @@ char name[100];
 int fd;
 int chese_remain=9;
 int place,type,chese_place[20];
-int flag=0;
+int flag=0,flag1=0;
 
 int determine(){
 	int check[8]={0};
@@ -129,9 +129,16 @@ int main(int argc, char *argv[])
 	char str[]="已进入聊天室\n";
 	printf("请输入用户名：");
 	fgets(name,sizeof(name),stdin);
+	if(flag1==0){
+		char tmp[100]="name:";
+		strcat(tmp,name);
+		strcpy(name,tmp);
+		flag1=1;
+	}
+
 	//name[strlen(name)-1]='\0';
 	send(fd,name,(strlen(name)-1),0);
-	send(fd,str,(strlen(str)),0);
+	//send(fd,str,(strlen(str)),0);
 
 
 	pthread_t tid;
@@ -141,6 +148,7 @@ int main(int argc, char *argv[])
 	
 	while(1)
 	{
+		strcpy(name,name+5);
 		memset(sendbuf,0,sizeof(sendbuf));
 		fgets(sendbuf,sizeof(sendbuf),stdin);
 		if(strstr(sendbuf,"exit")!=NULL){
