@@ -1,5 +1,5 @@
 all:
-	gcc -Wall -o sniffex sniffex.c -lpcap
+	gcc -Wall -std=gnu99 -o sniffex sniffex.c -lpcap
 clean:
 	rm -f sniffex
 

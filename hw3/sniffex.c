@@ -14,6 +14,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include<netinet/ether.h>
+#include<linux/if_link.h>
+#include<netpacket/packet.h>
+#include<linux/if_ether.h>
+#include<net/ethernet.h>
+#include<net/if.h>
+
 /* default snap length (maximum bytes per packet to capture) */
 #define SNAP_LEN 1518
 
@@ -22,6 +29,8 @@
 
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN	6
+
+#define MAC_ADDRSTRLEN 2*6+5+1
 
 /* Ethernet header */
 struct sniff_ethernet {
@@ -52,6 +61,12 @@ struct sniff_ip {
 /* TCP header */
 typedef u_int tcp_seq;
 
+#define    ETHER_ADDR_LEN        6
+struct    ether_header_internet {
+	u_char    ether_dhost[ETHER_ADDR_LEN];
+	u_char    ether_shost[ETHER_ADDR_LEN];
+	u_short    ether_type;
+};
 struct sniff_tcp {
 	u_short th_sport;               /* source port */
 	u_short th_dport;               /* destination port */
@@ -228,14 +243,25 @@ int count_ip_srt_num=0;
 char count_ip_dst_name[1000][30];
 int count_ip_dst_name_num[1000];
 int count_ip_dst_num=0;
-	void
-got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
+static const char *mac_ntoa(u_int8_t *d) {
+#define STR_BUF 16
+	static char mac[STR_BUF][MAC_ADDRSTRLEN];
+	static int which = -1;
+
+	which = (which + 1 == STR_BUF ? 0 : which + 1);
+
+	memset(mac[which], 0, MAC_ADDRSTRLEN);
+	snprintf(mac[which], sizeof(mac[which]), "%02x:%02x:%02x:%02x:%02x:%02x", d[0], d[1], d[2], d[3], d[4], d[5]);
+	return mac[which];
+}//end mac_ntoa
+void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
 
 	static int count = 1;                   /* packet counter */
 
 	/* declare pointers to packet headers */
 	const struct sniff_ethernet *ethernet;  /* The ethernet header [1] */
+	const struct ether_header_internet *ethernet2;
 	const struct sniff_ip *ip;              /* The IP header */
 	const struct sniff_tcp *tcp;            /* The TCP header */
 	const char *payload;                    /* Packet payload */
@@ -248,6 +274,10 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 	int size_tcp;
 	int size_payload;
 
+	char dst_mac[MAC_ADDRSTRLEN]={0};
+	char src_mac[MAC_ADDRSTRLEN]={0};
+	u_int16_t type;
+
 	local_tv_sec =header->ts.tv_sec;/*印時間*/
 	ltime = localtime(&local_tv_sec);
 	strftime(timestr, sizeof timestr,"%H:%M:%S",ltime);
@@ -258,6 +288,9 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 	/* define ethernet header */
 	ethernet = (struct sniff_ethernet*)(packet);
 
+	ethernet2 = (struct ether_header_internet *)(packet);
+
+
 	/* define/compute ip header offset */
 	ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
 	size_ip = IP_HL(ip)*4;
@@ -266,17 +299,30 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 		return;
 		}*/
 
+	char src[100],dst[100];
+	//src=inet_ntoa(ip->ip_src);
+	//dst=inet_ntoa(ip->ip_dst);
+	snprintf(src,sizeof(src),"%s",inet_ntoa(ip->ip_src));
+	snprintf(dst,sizeof(dst),"%s",inet_ntoa(ip->ip_dst));
 	/* print source and destination IP addresses */
-	printf("       From: %s\n", inet_ntoa(ip->ip_src));
-	printf("         To: %s\n", inet_ntoa(ip->ip_dst));
-	printf("       Time: %s.%6d\n",timestr,(int)header->ts.tv_usec);
-	printf("     Length: %d bytes\n",header->len);
+	printf("Des MAC Addr:  %17s|\n", mac_ntoa(ethernet->ether_dhost));
+	printf("Src MAC Addr:  %17s|\n", mac_ntoa(ethernet->ether_shost));
+	printf("        From: %s\n", inet_ntoa(ip->ip_src));
+	printf("          To: %s\n", inet_ntoa(ip->ip_dst));
+	printf("        Time: %s.%6d\n",timestr,(int)header->ts.tv_usec);
+	printf("      Length: %d bytes\n",header->len);
 
-	char *src,*dst;
-	src=inet_ntoa(ip->ip_src);
-	dst=inet_ntoa(ip->ip_dst);
 
-	int flag1=0,flag2=0;
+	
+
+	//printf("%s\n%s\n",src,dst);
+
+	strcpy(count_ip_srt_name[count_ip_srt_num],src);
+	count_ip_srt_num++;
+	strcpy(count_ip_dst_name[count_ip_dst_num],dst);
+	count_ip_dst_num++;
+
+	/*int flag1=0,flag2=0;
 
 	for(int i=0;i<count_ip_srt_num;i++)
 		if(strcmp(count_ip_srt_name[i],"src")==0){
@@ -292,7 +338,7 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 	}
 
 	for(int i=0;i<count_ip_dst_num;i++)
-		if(strcmp(count_ip_dst_name[i],dst)==0){
+		if(strcmp(count_ip_dst_name[i],"dst")==0){
 			count_ip_dst_name_num[i]++;
 			flag2=1;
 			break;
@@ -301,7 +347,7 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 		strcpy(count_ip_dst_name[count_ip_dst_num],dst);
 		count_ip_dst_num++;
 		count_ip_dst_name_num[count_ip_dst_num]++;
-	}
+	}*/
 
 
 	/* determine protocol */	
@@ -369,7 +415,7 @@ int main(int argc, char **argv)
 	struct bpf_program fp;			/* compiled filter program (expression) */
 	bpf_u_int32 mask;			/* subnet mask */
 	bpf_u_int32 net;			/* ip */
-	int num_packets = 100;			/* number of packets to capture */
+	int num_packets = 10;			/* number of packets to capture */
 
 	//print_app_banner();
 	dev = pcap_lookupdev(errbuf);
@@ -525,13 +571,62 @@ int main(int argc, char **argv)
 		pcap_freecode(&fp);
 		pcap_close(handle);
 
-		printf("Sent from this ip:\n");
-		for(int i=0;i<count_ip_srt_num;i++)
-			printf("%s : %d\n",count_ip_srt_name[i],count_ip_srt_name_num[i]);
+		char sent_buff[1000][1000]={0},taken_buff[1000][1000]={0};
+		int count_sent[1000]={0},count_taken[1000]={0};
+		int totle_sent=1,totle_taken=1;
+		strcpy(sent_buff[0],count_ip_srt_name[0]);
+		count_sent[0]=1;
 
-		printf("Taken from this ip:\n");
-		for(int i=0;i<count_ip_dst_num;i++)
-			printf("%s : %d\n",count_ip_dst_name[i],count_ip_dst_name_num[i]);
+		for(int i=1;i<count_ip_srt_num;i++){
+			int flag=0,j;
+			for(j=0;j<totle_sent;j++){
+				if(strcmp(sent_buff[j],count_ip_srt_name[i])==0){
+					flag=1;
+					break;
+				}	
+
+			}	
+			if(flag==0){
+				strcpy(sent_buff[totle_sent],count_ip_srt_name[i]);
+				count_sent[totle_sent]=1;
+				totle_sent++;
+			}
+			else if(flag==1){
+				count_sent[j]++;
+			}
+		}
+		
+		strcpy(taken_buff[0],count_ip_dst_name[0]);
+		count_taken[0]=1;
+
+		//for(int i=0;i<count_ip_dst_num+1;i++) printf("%s : %d\n",count_ip_dst_name[i],count_ip_dst_name_num[i]);
+		for(int i=1;i<count_ip_dst_num;i++){
+			int flag=0,j;
+			for(j=0;j<totle_taken;j++){
+				if(strcmp(taken_buff[j],count_ip_dst_name[i])==0){
+					//printf("in1\n");
+					flag=1;
+					break;
+				}	
+
+			}	
+			if(flag==0){
+				strcpy(taken_buff[totle_taken],count_ip_dst_name[i]);
+				count_taken[totle_taken]=1;
+				totle_taken++;
+			}
+			else if(flag==1){
+				count_taken[j]++;
+				//printf("%d\n",count_taken[j]);
+			}
+		}
+		
+	
+		printf("\n\nSent from this ip:\n");
+		for(int i=0;i<totle_sent;i++) printf("id: %s :  %d\n",sent_buff[i],count_sent[i]);
+		printf("\n\nTaken from this ip:\n");
+		for(int i=0;i<totle_taken;i++) printf("id: %s :  %d\n",taken_buff[i],count_taken[i]);
+
 		printf("\nCapture complete.\n");
 
 		return 0;
